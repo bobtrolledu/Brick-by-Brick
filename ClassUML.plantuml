@@ -1,0 +1,47 @@
+@startuml ClassUML
+!pragma layout smetana
+
+package LocalMachine{
+    class SortingManager{
+        - imageQueue    
+        - progress      
+        - hardware  
+        + startProgram() 
+        + requestImage() 
+        + processImage() 
+        + sendSortingData() 
+        + updateProgressBar()
+    }
+
+    class DetectionModel{
+        - image
+        - detectedColor      
+        + detectObject()
+        + callAPI()
+        + sendData()
+    }
+}
+
+package RaspberryPi{
+    class UIController{
+        - progressBar
+        - sortingInfo
+        - displayScreen      
+        + updateUI()
+        + showProgress()
+        + displaySortingInfo()
+    }
+
+    class Hardware{
+        - sensors
+        - motors
+        - actuators
+        + init()
+        + readSensorData()
+        + getCoordinates()
+        + moveMotors()
+        + moveActuators()
+        + sendProgress()
+    }
+}
+@enduml
