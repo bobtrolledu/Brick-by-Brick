@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./TMC2209_Raspberry_Pi/src"
+    ]
+}
