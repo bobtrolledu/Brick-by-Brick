@@ -10,6 +10,9 @@
     <input type="number" name="quantity" placeholder="Quantity" required />
     <button type="submit">Add Piece</button>
 </form>
+<form action="{{ url_for('delete_all') }}" method="post">
+    <button type="submit">Delete All</button>
+</form>
 <script>
 var socket = io();
 socket.on('refresh-list', function(data) {

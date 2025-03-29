@@ -1,0 +1,9 @@
+open two terminals in this order:
+
+terminal 1:
+cd to /LegoDetection/app/
+run flask run --no-debug
+
+terminal 2:
+cd to /LegoDetection/app/frontend
+run npm run dev
