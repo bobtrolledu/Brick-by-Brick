@@ -7,7 +7,7 @@ tmc2 = TMC_2209(8,7,1,250000,driver_address=1)
 min_steps = 0
 max_steps = 5850
 
-average_speed = 300
+average_speed = 2000
 
 driver_list = [tmc1, tmc2]
 
@@ -20,13 +20,13 @@ def setup():
         tmc.set_spreadcycle(True)
         tmc.set_microstepping_resolution(8)
         tmc.set_internal_rsense(False)
-        tmc.set_acceleration_fullstep(5000)
+        tmc.set_acceleration_fullstep(average_speed)
         tmc.set_max_speed_fullstep(average_speed)
         tmc.set_motor_enabled(True)
         tmc.set_current_position(0)
 
     tmc1.set_current(900)
-    tmc2.set_current(300)
+    tmc2.set_current(500)
 
 
 """ tmc1.test_stallguard_threshold(10000)

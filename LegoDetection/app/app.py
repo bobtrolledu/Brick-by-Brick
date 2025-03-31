@@ -10,21 +10,22 @@ import datetime as DT
 import numpy as np
 from app import app, db
 from app.lego import LegoPiece
+#from codes import mqtt_send_test
 
 API_URL = "https://api.brickognize.com/predict/"
-CAMERA_SELECT = 0 # change if needed; 0 normally works
+CAMERA_SELECT = 1 # change if needed; 0 normally works
 API_SEND_INTERVAL = 1.5 # i don't recommend anything lower than 1 second cause the api can't keep up
 
-COLOR_RANGES = { # color ranges for OpenCV color detection model
-    'Red': [np.array([0, 100, 100]), np.array([10, 255, 255])],
-    'Orange': [np.array([10, 100, 100]), np.array([30, 255, 255])],
-    'Yellow': [np.array([25, 100, 100]), np.array([45, 255, 255])],
-    'Green': [np.array([50, 100, 50]), np.array([90, 255, 255])],
-    'Blue': [np.array([90, 100, 100]), np.array([110, 255, 255])],
-    'Purple': [np.array([140, 100, 100]), np.array([170, 255, 255])],
-    'Brown': [np.array([10, 50, 50]), np.array([20, 255, 100])],
-    'Grey/Black': [np.array([0, 0, 0]), np.array([180, 50, 200])],
-    'White': [np.array([0, 0, 200]), np.array([180, 50, 255])]
+COLOR_RANGES = {  # Adjusted color ranges for improved accuracy in OpenCV color detection
+    'Red': [np.array([0, 120, 70]), np.array([10, 255, 255])],
+    'Orange': [np.array([11, 150, 100]), np.array([25, 255, 255])],
+    'Yellow': [np.array([26, 150, 150]), np.array([35, 255, 255])],
+    'Green': [np.array([36, 100, 100]), np.array([85, 255, 255])],
+    'Blue': [np.array([86, 150, 100]), np.array([125, 255, 255])],
+    'Purple': [np.array([126, 100, 100]), np.array([160, 255, 255])],
+    'Brown': [np.array([10, 80, 20]), np.array([20, 255, 150])],
+    'Grey/Black': [np.array([0, 0, 0]), np.array([180, 50, 100])],
+    'White': [np.array([0, 0, 200]), np.array([180, 30, 255])]
 }
 
 CORS(app)
@@ -117,6 +118,8 @@ def process_frame(frame):
 # primary loop: displays the camera feed
 def generate_frames():
     camera = cv2.VideoCapture(CAMERA_SELECT)
+    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
+    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
     while True:
         success, frame = camera.read()
         if not success:
