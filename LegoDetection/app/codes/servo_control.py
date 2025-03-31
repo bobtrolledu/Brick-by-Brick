@@ -21,9 +21,14 @@ def open_close():
     GPIO.output(servo_pin, False)
     pwm.ChangeDutyCycle(0)
 
+def half():
+    duty_cycle = 5 / 18 + 2
+    GPIO.output(servo_pin, True)
+    pwm.ChangeDutyCycle(duty_cycle)
+    time.sleep(1)
 
 if __name__ == "__main__":
-
+    half()
     pwm.stop()
     GPIO.cleanup()
 
