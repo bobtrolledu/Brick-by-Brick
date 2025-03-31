@@ -10,12 +10,23 @@ import datetime as DT
 import numpy as np
 from app import app, db
 from app.lego import LegoPiece
+from app.codes.mqtt_send_test import send_message
 #from codes import mqtt_send_test
 
 API_URL = "https://api.brickognize.com/predict/"
 CAMERA_SELECT = 0 # change if needed; 0 normally works
-API_SEND_INTERVAL = 1.5 # i don't recommend anything lower than 1 second cause the api can't keep up
-
+API_SEND_INTERVAL = 3 # i don't recommend anything lower than 1 second cause the api can't keep up
+BINS = {
+    'Red': '0,0',
+    'Orange': '0,1',
+    'Yellow': '0,2',
+    'Green': '1,0',
+    'Blue': '1,1',
+    'Purple': '1,2',
+    'Brown': '2,0',
+    'Grey/Black': '2,1',
+    'White': '2,2'
+}
 COLOR_RANGES = {  # Adjusted color ranges for improved accuracy in OpenCV color detection
     'Red': [np.array([0, 120, 70]), np.array([10, 255, 255])],
     'Orange': [np.array([11, 150, 100]), np.array([25, 255, 255])],
@@ -64,7 +75,7 @@ def brick_type_detect(image):
         color, _ = get_primary_color(image, top_left, bottom_right)
 
         add_to_database(name, color, brickid, 1)
-
+        send_message(BINS[color])
         # dynamic update for info describing live camera feed
         socketio.emit('update_info', {'id': brickid, 'name': name, 'confidence': round(confidence, 2), 'color': color})
         return top_left, bottom_right
@@ -114,8 +125,8 @@ def process_frame(frame):
 # primary loop: displays the camera feed
 def generate_frames():
     camera = cv2.VideoCapture(CAMERA_SELECT)
-    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280) # 3840
+    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720) # 2160
     camera.set(cv2.CAP_PROP_FPS, 24)
     last_detection_time = DT.datetime.now()
     while True:
@@ -126,6 +137,7 @@ def generate_frames():
             current_time = DT.datetime.now()
             if detection_enabled and (current_time - last_detection_time).total_seconds() >= API_SEND_INTERVAL:
                 frame_copy = frame.copy()
+                frame_copy = cv2.resize(frame_copy, (1280, 720), interpolation=cv2.INTER_AREA)
                 socketio.start_background_task(brick_type_detect, frame_copy)
                 last_detection_time = current_time
                 

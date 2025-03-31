@@ -7,16 +7,7 @@ client = mqtt.Client()
 
 client.connect(broker, 1883, 60)
 
-while True:
-    message = input("Enter message to send: ")
-    client.publish(topic, message)
-    print("Message sent!")
-    if message.lower() == "exit":
-        break
-
-client.disconnect()
-
-def send_message(topic, broker, message):
+def send_message(message):
     client = mqtt.Client()
 
     client.connect(broker, 1883, 60)
