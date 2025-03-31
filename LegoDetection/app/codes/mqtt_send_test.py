@@ -1,3 +1,4 @@
 import paho.mqtt.publish as publish
 
-publish.single("paho/test/rpi-laptop", "fuck you", hostname="mqtt.eclipseprojects.io")
+def send_message(msg):
+    publish.single("paho/test/rpi-laptop", msg, hostname="mqtt.eclipseprojects.io")
