@@ -117,8 +117,10 @@ def go_to_box(x_coord, y_coord):
 
     print("distance x: ", distance_to_goal_x, "distance y: ", distance_to_goal_y)
 
-    tmc1.run_to_position_steps_threaded(distance_to_goal_x, MovementAbsRel.RELATIVE)
-    tmc2.run_to_position_steps_threaded(distance_to_goal_y, MovementAbsRel.RELATIVE)
+    tmc1.run_to_position_steps(distance_to_goal_x, MovementAbsRel.RELATIVE)
+    time.sleep(3)
+    tmc2.run_to_position_steps(distance_to_goal_y, MovementAbsRel.RELATIVE)
+    time.sleep(3)
 
     """ while tmc1._movement_phase != MovementPhase.STANDSTILL and tmc2._movement_phase != MovementPhase.STANDSTILL:
         if not toggle:
@@ -126,9 +128,6 @@ def go_to_box(x_coord, y_coord):
             tmc2.set_max_speed_fullstep(y_cal_speed)
             toggle = True
         time.sleep(0.02) """
-
-    tmc1.wait_for_movement_finished_threaded()
-    tmc2.wait_for_movement_finished_threaded()
 
     #tmc1.set_max_speed_fullstep(average_speed)
     #tmc2.set_max_speed_fullstep(average_speed)

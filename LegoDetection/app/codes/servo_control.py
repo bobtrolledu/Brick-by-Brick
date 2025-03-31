@@ -23,12 +23,8 @@ def open_close():
 
 
 if __name__ == "__main__":
-    try:
-        while True:
-            angle = float(input("enter speed"))
-            open_close()
-    except KeyboardInterrupt:
-        pwm.stop()
-        GPIO.cleanup()
+
+    pwm.stop()
+    GPIO.cleanup()
 
         
