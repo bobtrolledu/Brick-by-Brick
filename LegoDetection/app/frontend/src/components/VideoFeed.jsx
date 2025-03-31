@@ -48,12 +48,12 @@ export const VideoFeed = ({ isDetecting, setIsDetecting }) => {
   return (
     <div className="flex flex-col items-center">
       <div className="relative w-full max-w-screen-4xl">
-        {/* Set video to display in 4K */}
+        {/* Set video to display in 720p */}
         <img
           src="http://localhost:5000/video"
-          alt="4K Video Feed"
+          alt="720p Video Feed"
           className="w-full h-auto shadow-lg"
-          style={{ maxWidth: "3840px", maxHeight: "2160px" }}
+          style={{ maxWidth: "1280px", maxHeight: "720px" }}
         />
       </div>
 

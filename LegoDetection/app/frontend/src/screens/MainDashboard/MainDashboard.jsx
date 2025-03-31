@@ -40,7 +40,7 @@ export const MainDashboard = () => {
 
     return () => socket.disconnect();
   }, []);
-
+  
   const handleAddPiece = async (formData) => {
     try {
       const response = await fetch('http://localhost:5000/api/add', {

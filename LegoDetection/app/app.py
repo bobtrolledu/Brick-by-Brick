@@ -13,7 +13,7 @@ from app.lego import LegoPiece
 #from codes import mqtt_send_test
 
 API_URL = "https://api.brickognize.com/predict/"
-CAMERA_SELECT = 1 # change if needed; 0 normally works
+CAMERA_SELECT = 0 # change if needed; 0 normally works
 API_SEND_INTERVAL = 1.5 # i don't recommend anything lower than 1 second cause the api can't keep up
 
 COLOR_RANGES = {  # Adjusted color ranges for improved accuracy in OpenCV color detection
@@ -31,47 +31,45 @@ COLOR_RANGES = {  # Adjusted color ranges for improved accuracy in OpenCV color 
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-last_called = DT.datetime.now()
+# last_called = DT.datetime.now()
 boundingbox = None
+detection_enabled = False
 
 # right now the program will detect the brick every set interval;
 # should most likely change the behavior to better suit the build
 def brick_type_detect(image):
-    global last_called, boundingbox
+    global boundingbox
+    try:
+        # writes a jpeg to temp to upload to API and display as live feed
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_img_path = os.path.join(temp_dir, "brick.jpg")
+            cv2.imwrite(temp_img_path, image)
+            response = requests.post(API_URL, headers={'accept': 'application/json'}, files={'query_image': (temp_img_path, open(temp_img_path, 'rb'), 'image/jpeg')})
 
-    if (DT.datetime.now() - last_called).total_seconds() >= API_SEND_INTERVAL:
-        try:
-            # writes a jpeg to temp to upload to API and display as live feed
-            with tempfile.TemporaryDirectory() as temp_dir:
-                temp_img_path = os.path.join(temp_dir, "brick.jpg")
-                cv2.imwrite(temp_img_path, image)
-                response = requests.post(API_URL, headers={'accept': 'application/json'}, files={'query_image': (temp_img_path, open(temp_img_path, 'rb'), 'image/jpeg')})
-            
-            data = json.loads(response.content)
-            if 'items' not in data or not data['items']: # if brickify fails to detect
-                socketio.emit('update_info', {'id': 'N/A', 'name': 'N/A', 'confidence': '-1', 'color': 'N/A'})
-                return
-            boundingbox = data['bounding_box']
-            brickid = data['items'][0]['id']
-            name = data['items'][0]['name']
-            confidence = data['bounding_box']['score'] * 100
-            last_called = DT.datetime.now()
+        data = json.loads(response.content)
+        if 'items' not in data or not data['items']: # if brickify fails to detect
+            socketio.emit('update_info', {'id': 'N/A', 'name': 'N/A', 'confidence': '-1', 'color': 'N/A'})
+            return
+        boundingbox = data['bounding_box']
+        brickid = data['items'][0]['id']
+        name = data['items'][0]['name']
+        confidence = data['bounding_box']['score'] * 100
 
-            # calculates top-left and bot-right coordinates of bounding box for detected lego piece
-            l, r, u, d = boundingbox['left'], boundingbox['right'], boundingbox['upper'], boundingbox['lower']
-            iw, ih = boundingbox['image_width'], boundingbox['image_height']
-            fh, fw, _ = image.shape
-            top_left = (int(l/iw * fw), int(u/ih * fh))
-            bottom_right = (int(r/iw * fw), int(d/ih * fh))
-            color, _ = get_primary_color(image, top_left, bottom_right)
+        # calculates top-left and bot-right coordinates of bounding box for detected lego piece
+        l, r, u, d = boundingbox['left'], boundingbox['right'], boundingbox['upper'], boundingbox['lower']
+        iw, ih = boundingbox['image_width'], boundingbox['image_height']
+        fh, fw, _ = image.shape
+        top_left = (int(l/iw * fw), int(u/ih * fh))
+        bottom_right = (int(r/iw * fw), int(d/ih * fh))
+        color, _ = get_primary_color(image, top_left, bottom_right)
 
-            add_to_database(name, color, brickid, 1)
+        add_to_database(name, color, brickid, 1)
 
-            # dynamic update for info describing live camera feed
-            socketio.emit('update_info', {'id': brickid, 'name': name, 'confidence': round(confidence, 2), 'color': color})
-            return top_left, bottom_right
-        except requests.exceptions.RequestException as e:
-            return {"status": "DOWN", "message": str(e)}
+        # dynamic update for info describing live camera feed
+        socketio.emit('update_info', {'id': brickid, 'name': name, 'confidence': round(confidence, 2), 'color': color})
+        return top_left, bottom_right
+    except requests.exceptions.RequestException as e:
+        return {"status": "DOWN", "message": str(e)}
 
 # returns primary color from image given a bounding box
 def get_primary_color(image, top_left, bottom_right):
@@ -90,8 +88,6 @@ def get_primary_color(image, top_left, bottom_right):
     max_count = pixel_counts[most_prevalent]
 
     return most_prevalent, max_count
-
-
 
 @app.route('/api/toggle_detection', methods=['POST'])
 def toggle_detection():
@@ -118,18 +114,23 @@ def process_frame(frame):
 # primary loop: displays the camera feed
 def generate_frames():
     camera = cv2.VideoCapture(CAMERA_SELECT)
-    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
-    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
+    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    camera.set(cv2.CAP_PROP_FPS, 24)
+    last_detection_time = DT.datetime.now()
     while True:
         success, frame = camera.read()
         if not success:
             break
         else:
-            if detection_enabled:
+            current_time = DT.datetime.now()
+            if detection_enabled and (current_time - last_detection_time).total_seconds() >= API_SEND_INTERVAL:
                 frame_copy = frame.copy()
                 socketio.start_background_task(brick_type_detect, frame_copy)
+                last_detection_time = current_time
+                
             frame = process_frame(frame)
-            ret, buffer = cv2.imencode('.jpg', frame)
+            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85]) 
             frame = buffer.tobytes()
             yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
