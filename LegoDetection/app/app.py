@@ -45,7 +45,7 @@ def brick_type_detect(image):
                 temp_img_path = os.path.join(temp_dir, "brick.jpg")
                 cv2.imwrite(temp_img_path, image)
                 response = requests.post(API_URL, headers={'accept': 'application/json'}, files={'query_image': (temp_img_path, open(temp_img_path, 'rb'), 'image/jpeg')})
-
+            
             data = json.loads(response.content)
             if 'items' not in data or not data['items']: # if brickify fails to detect
                 socketio.emit('update_info', {'id': 'N/A', 'name': 'N/A', 'confidence': '-1', 'color': 'N/A'})
@@ -90,7 +90,7 @@ def get_primary_color(image, top_left, bottom_right):
 
     return most_prevalent, max_count
 
-detection_enabled = True
+
 
 @app.route('/api/toggle_detection', methods=['POST'])
 def toggle_detection():
