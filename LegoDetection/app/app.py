@@ -13,7 +13,7 @@ from app.lego import LegoPiece
 #from codes import mqtt_send_test
 
 API_URL = "https://api.brickognize.com/predict/"
-CAMERA_SELECT = 0 # change if needed; 0 normally works
+CAMERA_SELECT = 1 # change if needed; 0 normally works
 API_SEND_INTERVAL = 1.5 # i don't recommend anything lower than 1 second cause the api can't keep up
 
 COLOR_RANGES = {  # Adjusted color ranges for improved accuracy in OpenCV color detection
