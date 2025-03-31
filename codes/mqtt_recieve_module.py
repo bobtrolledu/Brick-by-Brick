@@ -1,5 +1,5 @@
 import paho.mqtt.client as mqtt
-import test
+import stepper_control
 broker = "broker.hivemq.com"
 topic = "test/pi-laptop"
 
