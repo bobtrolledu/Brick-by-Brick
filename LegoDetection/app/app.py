@@ -1,21 +1,21 @@
-from flask import jsonify, render_template, Response, request, redirect, url_for
-from flask_socketio import SocketIO
-from flask_cors import CORS
+import time
 import requests
-import cv2
 import json
 import tempfile
 import os
-import datetime as DT 
 import numpy as np
+import cv2
+from flask import jsonify, Response, request
+from flask_socketio import SocketIO
+from flask_cors import CORS
 from app import app, db
 from app.lego import LegoPiece
 from app.codes.mqtt_send_test import send_message
-#from codes import mqtt_send_test
+import paho.mqtt.client as mqtt
 
 API_URL = "https://api.brickognize.com/predict/"
-CAMERA_SELECT = 0 # change if needed; 0 normally works
-API_SEND_INTERVAL = 3 # i don't recommend anything lower than 1 second cause the api can't keep up
+CAMERA_SELECT = 1  # change if needed; 0 normally works
+API_SEND_INTERVAL = 1  # i don't recommend anything lower than 1 second cause the api can't keep up
 BINS = {
     'Red': '0,0',
     'Orange': '0,1',
@@ -27,7 +27,7 @@ BINS = {
     'Grey/Black': '2,1',
     'White': '2,2'
 }
-COLOR_RANGES = {  # Adjusted color ranges for improved accuracy in OpenCV color detection
+COLOR_RANGES = {
     'Red': [np.array([0, 120, 70]), np.array([10, 255, 255])],
     'Orange': [np.array([11, 150, 100]), np.array([25, 255, 255])],
     'Yellow': [np.array([26, 150, 150]), np.array([35, 255, 255])],
@@ -42,47 +42,94 @@ COLOR_RANGES = {  # Adjusted color ranges for improved accuracy in OpenCV color 
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# last_called = DT.datetime.now()
 boundingbox = None
-detection_enabled = False
+response_received = True  # Initially set to True to allow the first API call
+movement_in_progress = False
+toggle_detect = False
+task_in_progress = False
 
-# right now the program will detect the brick every set interval;
-# should most likely change the behavior to better suit the build
+# MQTT callback to handle movement completion
+def on_message(client, userdata, msg):
+    global movement_in_progress, response_received
+    payload = msg.payload.decode()
+    if payload == "done":
+        print("Movement complete, resuming detection.")
+        movement_in_progress = False
+        response_received = True
+    else:
+        print(f"Movement in progress: {payload}")
+        movement_in_progress = True
+
+client = mqtt.Client()
+client.on_message = on_message
+client.connect("mqtt.eclipseprojects.io", 1883, 60)
+client.subscribe("paho/test/rpi-laptop")
+client.loop_start()
+
+# Function to detect brick type via API
 def brick_type_detect(image):
-    global boundingbox
+    global boundingbox, movement_in_progress, response_received, task_in_progress
     try:
-        # writes a jpeg to temp to upload to API and display as live feed
+        if task_in_progress:  # Check if a task is already running
+            return  # Skip if the task is already running
+
+        task_in_progress = True  # Mark that a task is running
+
+        # Write a JPEG to temp to upload to API and display as live feed
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_img_path = os.path.join(temp_dir, "brick.jpg")
             cv2.imwrite(temp_img_path, image)
-            response = requests.post(API_URL, headers={'accept': 'application/json'}, files={'query_image': (temp_img_path, open(temp_img_path, 'rb'), 'image/jpeg')})
+            print(f"Image saved at {temp_img_path}")  # Debugging line
 
-        data = json.loads(response.content)
-        if 'items' not in data or not data['items']: # if brickify fails to detect
-            socketio.emit('update_info', {'id': 'N/A', 'name': 'N/A', 'confidence': '-1', 'color': 'N/A'})
-            return
-        boundingbox = data['bounding_box']
-        brickid = data['items'][0]['id']
-        name = data['items'][0]['name']
-        confidence = data['bounding_box']['score'] * 100
+            # Send the image to the Brickognize API
+            response = requests.post(API_URL, headers={'accept': 'application/json'},
+                                     files={'query_image': (temp_img_path, open(temp_img_path, 'rb'), 'image/jpeg')},
+                                     timeout=10)
 
-        # calculates top-left and bot-right coordinates of bounding box for detected lego piece
-        l, r, u, d = boundingbox['left'], boundingbox['right'], boundingbox['upper'], boundingbox['lower']
-        iw, ih = boundingbox['image_width'], boundingbox['image_height']
-        fh, fw, _ = image.shape
-        top_left = (int(l/iw * fw), int(u/ih * fh))
-        bottom_right = (int(r/iw * fw), int(d/ih * fh))
-        color, _ = get_primary_color(image, top_left, bottom_right)
+            print(f"API response status code: {response.status_code}")  # Debugging line
 
-        add_to_database(name, color, brickid, 1)
-        send_message(BINS[color])
-        # dynamic update for info describing live camera feed
-        socketio.emit('update_info', {'id': brickid, 'name': name, 'confidence': round(confidence, 2), 'color': color})
-        return top_left, bottom_right
+            # Parse API response
+            data = response.json()
+            print(f"API response data: {data}")  # Debugging line
+            if 'items' not in data or not data['items'] or movement_in_progress:  # if brickify fails to detect
+                socketio.emit('update_info', {'id': 'N/A', 'name': 'N/A', 'confidence': '-1', 'color': 'N/A'})
+                task_in_progress = False  # Reset the task flag
+                return
+
+            # Extract the bounding box and brick details
+            boundingbox = data['bounding_box']
+            brickid = data['items'][0]['id']
+            name = data['items'][0]['name']
+            confidence = data['bounding_box']['score'] * 100
+
+            # Calculate the top-left and bottom-right coordinates of the bounding box for the detected Lego piece
+            l, r, u, d = boundingbox['left'], boundingbox['right'], boundingbox['upper'], boundingbox['lower']
+            iw, ih = boundingbox['image_width'], boundingbox['image_height']
+            fh, fw, _ = image.shape
+            top_left = (int(l / iw * fw), int(u / ih * fh))
+            bottom_right = (int(r / iw * fw), int(d / ih * fh))
+
+            # Get the primary color of the detected brick
+            color, _ = get_primary_color(image, top_left, bottom_right)
+
+            # Add to database and send message to sort the piece into the corresponding bin
+            add_to_database(name, color, brickid, 1)
+            print("sent " + BINS[color])
+            send_message(BINS[color])
+            movement_in_progress = True
+            response_received = False
+            # Emit a dynamic update with live camera feed information
+            socketio.emit('update_info',
+                          {'id': brickid, 'name': name, 'confidence': round(confidence, 2), 'color': color})
+
+            task_in_progress = False  # Reset the task flag after completion
+            return top_left, bottom_right
     except requests.exceptions.RequestException as e:
+        task_in_progress = False  # Reset the task flag in case of an exception
         return {"status": "DOWN", "message": str(e)}
 
-# returns primary color from image given a bounding box
+
+# Function to get the primary color of the brick
 def get_primary_color(image, top_left, bottom_right):
     x1, y1 = top_left
     x2, y2 = bottom_right
@@ -100,20 +147,22 @@ def get_primary_color(image, top_left, bottom_right):
 
     return most_prevalent, max_count
 
+# Flask route to toggle detection
 @app.route('/api/toggle_detection', methods=['POST'])
 def toggle_detection():
-    global detection_enabled
+    global toggle_detect
     data = request.json
-    detection_enabled = data.get('detecting', True)
-    return jsonify({"status": "success", "detecting": detection_enabled})
+    toggle_detect = data.get('detecting', False)
+    return jsonify({"status": "success", "detecting": toggle_detect})
 
+# Flask route to check detection status
 @app.route('/api/detection_status')
 def get_detection_status():
-    return jsonify({"detecting": detection_enabled})
+    return jsonify({"detecting": toggle_detect})
 
-# handle image processing
+# Function to process frames and detect bricks
 def process_frame(frame):
-    if detection_enabled and boundingbox:
+    if not movement_in_progress and boundingbox and toggle_detect:
         l, r, u, d = boundingbox['left'], boundingbox['right'], boundingbox['upper'], boundingbox['lower']
         iw, ih = boundingbox['image_width'], boundingbox['image_height']
         fh, fw, _ = frame.shape
@@ -122,48 +171,66 @@ def process_frame(frame):
         cv2.rectangle(frame, top_left, bottom_right, (255, 0, 0), 2)
     return frame
 
-# primary loop: displays the camera feed
+# Frame generation function that checks the API call interval
+# Frame generation function that checks the API call interval
 def generate_frames():
+    global response_received
+    last_api_call_time = time.time()  # Timestamp for the last API call
     camera = cv2.VideoCapture(CAMERA_SELECT)
-    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280) # 3840
-    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720) # 2160
+    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     camera.set(cv2.CAP_PROP_FPS, 24)
-    last_detection_time = DT.datetime.now()
+
     while True:
         success, frame = camera.read()
         if not success:
             break
-        else:
-            current_time = DT.datetime.now()
-            if detection_enabled and (current_time - last_detection_time).total_seconds() >= API_SEND_INTERVAL:
+
+        current_time = time.time()
+
+        # Check if API call can be made
+        if not movement_in_progress and not task_in_progress:  # Ensure no task is running
+            if (current_time - last_api_call_time) >= API_SEND_INTERVAL and toggle_detect and response_received:  # API call interval check
+                # Only make the API call if the interval has passed and no task is in progress
+                last_api_call_time = current_time  # Update last API call time
                 frame_copy = frame.copy()
                 frame_copy = cv2.resize(frame_copy, (1280, 720), interpolation=cv2.INTER_AREA)
-                socketio.start_background_task(brick_type_detect, frame_copy)
-                last_detection_time = current_time
-                
-            frame = process_frame(frame)
-            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85]) 
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                socketio.start_background_task(brick_type_detect, frame_copy)  # Call API in background
 
-@app.route("/video") # streams video
+        frame = process_frame(frame)
+        ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        frame = buffer.tobytes()
+        yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+# Route for streaming video
+@app.route("/video")
 def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace;boundary=frame')
 
-# route for getting all entries in db
-@app.route('/api/get_pieces')
-def get_pieces():
+# Add a new Lego piece to the database
+def add_to_database(name, color, brickid, quantity):
+    with app.app_context():
+        piece = db.session.query(LegoPiece).filter_by(brickid=brickid, color=color).first()
+        if piece:
+            piece.quantity += quantity
+        else:
+            new_piece = LegoPiece(
+                name=name,
+                color=color,
+                brickid=brickid,
+                quantity=quantity
+            )
+            db.session.add(new_piece)
+        db.session.commit()
+        refresh_list()
+
+# Refresh the list of Lego pieces
+def refresh_list():
     with app.app_context():
         pieces = db.session.execute(db.select(LegoPiece).order_by(LegoPiece.name)).scalars()
-        return jsonify([{
-            "id": p.id,
-            "name": p.name,
-            "color": p.color,
-            "brickid": p.brickid,
-            "quantity": p.quantity
-        } for p in pieces])
+        pieces_data = [{"id": p.id, "name": p.name, "color": p.color, "brickid": p.brickid, "quantity": p.quantity} for p in pieces]
+        socketio.emit('refresh-list', {'pieces': pieces_data})
 
-# route for adding a db entry
 @app.route('/api/add', methods=['POST'])
 def add_piece():
     try:
@@ -176,6 +243,7 @@ def add_piece():
         return jsonify({"message": "Success"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
 
 # route for deleting specific db entry
 @app.route('/api/delete/<int:id>', methods=['DELETE'])
@@ -203,30 +271,6 @@ def delete_all():
         return '', 204
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
-# calls socket to refresh list items in list.html
-def refresh_list():
-    with app.app_context():
-        pieces = db.session.execute(db.select(LegoPiece).order_by(LegoPiece.name)).scalars()
-        pieces_data = [{"id": p.id, "name": p.name, "color": p.color, "brickid": p.brickid, "quantity": p.quantity} for p in pieces]
-        socketio.emit('refresh-list', {'pieces': pieces_data})
-
-# adds lego piece to database
-def add_to_database(name, color, brickid, quantity):
-    with app.app_context():
-        piece = db.session.query(LegoPiece).filter_by(brickid=brickid, color=color).first()
-        if piece:
-            piece.quantity += quantity
-        else:
-            new_piece = LegoPiece(
-                name=name,
-                color=color,
-                brickid=brickid,
-                quantity=quantity
-            )
-            db.session.add(new_piece)
-        db.session.commit()
-        refresh_list()
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
