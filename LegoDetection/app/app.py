@@ -15,7 +15,7 @@ import paho.mqtt.client as mqtt
 
 API_URL = "https://api.brickognize.com/predict/"
 CAMERA_SELECT = 1  # change if needed; 0 normally works
-API_SEND_INTERVAL = 1  # i don't recommend anything lower than 1 second cause the api can't keep up
+API_SEND_INTERVAL = 1.5  # i don't recommend anything lower than 1 second cause the api can't keep up
 BINS = {
     'Red': '0,0',
     'Orange': '0,1',
@@ -91,7 +91,7 @@ def brick_type_detect(image):
             # Parse API response
             data = response.json()
             print(f"API response data: {data}")  # Debugging line
-            if 'items' not in data or not data['items'] or movement_in_progress:  # if brickify fails to detect
+            if 'items' not in data or not data['items'] or movement_in_progress or data['items'][-1]['score'] * 100 < 65.0:  # if brickify fails to detect
                 socketio.emit('update_info', {'id': 'N/A', 'name': 'N/A', 'confidence': '-1', 'color': 'N/A'})
                 task_in_progress = False  # Reset the task flag
                 return
@@ -100,7 +100,7 @@ def brick_type_detect(image):
             boundingbox = data['bounding_box']
             brickid = data['items'][0]['id']
             name = data['items'][0]['name']
-            confidence = data['bounding_box']['score'] * 100
+            confidence = data['items'][-1]['score'] * 100
 
             # Calculate the top-left and bottom-right coordinates of the bounding box for the detected Lego piece
             l, r, u, d = boundingbox['left'], boundingbox['right'], boundingbox['upper'], boundingbox['lower']
@@ -193,9 +193,10 @@ def generate_frames():
             if (current_time - last_api_call_time) >= API_SEND_INTERVAL and toggle_detect and response_received:  # API call interval check
                 # Only make the API call if the interval has passed and no task is in progress
                 last_api_call_time = current_time  # Update last API call time
-                frame_copy = frame.copy()
-                frame_copy = cv2.resize(frame_copy, (1280, 720), interpolation=cv2.INTER_AREA)
-                socketio.start_background_task(brick_type_detect, frame_copy)  # Call API in background
+                #frame_copy = frame.copy()
+                #frame_copy = cv2.resize(frame_copy, (1280, 720), interpolation=cv2.INTER_AREA)
+
+                socketio.start_background_task(brick_type_detect, frame)  # Call API in background
 
         frame = process_frame(frame)
         ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
