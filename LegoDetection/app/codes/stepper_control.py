@@ -1,8 +1,9 @@
 from TMC_2209.TMC_2209_StepperDriver import * 
 import math
+import servo_control as sc
 
-tmc1 = TMC_2209(16,20,21,250000,driver_address=0,)
-tmc2 = TMC_2209(8,7,1,250000,driver_address=1)
+tmc1 = TMC_2209(16,20,21,250000,driver_address=1,)
+tmc2 = TMC_2209(8,7,1,250000,driver_address=0)
 
 min_steps = 0
 max_steps = 5850
@@ -20,7 +21,7 @@ def setup():
         tmc.set_spreadcycle(True)
         tmc.set_microstepping_resolution(8)
         tmc.set_internal_rsense(False)
-        tmc.set_acceleration_fullstep(average_speed)
+        tmc.set_acceleration_fullstep(500)
         tmc.set_max_speed_fullstep(average_speed)
         tmc.set_motor_enabled(True)
         tmc.set_current_position(0)
@@ -97,7 +98,7 @@ def go_to_box(x_coord, y_coord):
 
     tmc1.wait_for_movement_finished_threaded()
     tmc2.wait_for_movement_finished_threaded()
-
+    
 def reset():
     tmc1.set_motor_enabled(False)
     tmc2.set_motor_enabled(False)

@@ -24,7 +24,7 @@ def pulse(num_pulses):
         rpi_vehicle.forward()
         time.sleep(0.5)
         rpi_vehicle.left_pwm.value = 0
-        time.sleep(1)
+        time.sleep(3)
 
     
 if __name__ == "__main__":
