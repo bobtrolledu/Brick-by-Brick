@@ -1,5 +1,3 @@
-# CMPE246-Group11
-
 # 🧱 BRICK by BRICK
 
 AI-powered vision. Precision sorting. Build without limitations.
@@ -43,7 +41,7 @@ We built **BRICK by BRICK** as a real-time embedded system using:
 
 ## 🚧 Challenges we ran into
 
-- **Motor alignment issues**: One of our gantry axes frequently lost calibration, which required redesigning and reprinting the mount.
+- **Motor alignment issues**: One of our gantry axes frequently stops mid-process, which required redesigning and readjusting the frame.
 - **False object detection**: Our computer vision model struggled with lighting and contrast — we had to adjust preprocessing steps and tune thresholds.
 - **Synchronization**: Ensuring real-time communication between vision processing and hardware motion was tricky without introducing lag.
 - **Limited hardware resources**: Raspberry Pi had performance limits — we had to optimize vision code and reduce overhead.
@@ -56,7 +54,7 @@ We built **BRICK by BRICK** as a real-time embedded system using:
 - Seamless hardware-software integration  
 - Responsive and modular backend using OOP principles  
 - Aesthetic frontend design using React + custom UI  
-- Operating entirely offline — no cloud dependencies  
+- Operating with no cloud dependencies  
 - Built from scratch as a full-stack embedded system
 
 ---
@@ -74,8 +72,7 @@ We built **BRICK by BRICK** as a real-time embedded system using:
 ## 🚀 What's next
 
 - Add **Z-axis** support for 3D sorting  
-- Train a **custom AI model** to replace Brickognize  
-- Add a **web dashboard** for remote monitoring  
+- Train a **custom AI model** to replace Brickognize   
 - Implement **reinforcement learning** for adaptive sorting  
 - Integrate a **cloud logging system** for data tracking
 
@@ -94,4 +91,4 @@ We built **BRICK by BRICK** as a real-time embedded system using:
 
 ## 🎥 Demo
 
-> 📹 link here when finished:
+> 📹 link:
