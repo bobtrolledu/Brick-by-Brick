@@ -1,5 +1,7 @@
 from collections import Counter
+from datetime import datetime, timedelta
 import time
+import flask
 import requests
 import json
 import tempfile
@@ -15,7 +17,7 @@ from app.codes.mqtt_send_test import send_message
 import paho.mqtt.client as mqtt
 
 API_URL = "https://api.brickognize.com/predict/"
-CAMERA_SELECT = 1  # change if needed; 0 normally works
+CAMERA_SELECT = 0  # change if needed; 0 normally works
 API_SEND_INTERVAL = 1.5  # i don't recommend anything lower than 1 second cause the api can't keep up
 DETECTION_THRESHOLD = 60.0
 BINS = {
@@ -128,41 +130,27 @@ def brick_type_detect(image, color):
         return {"status": "DOWN", "message": str(e)}
 
 
-# Function to get the primary color of the brick
-def get_primary_color(image, contour):
-    mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
-    cv2.drawContours(mask, [contour], -1, 255, thickness=cv2.FILLED)
-    masked_image = cv2.bitwise_and(image, image, mask=mask)
-
-    hsv_image = cv2.cvtColor(masked_image, cv2.COLOR_BGR2HSV)
-
-    coords = np.column_stack(np.where(mask > 0))
-    color_counts = {color_name: 0 for color_name in COLOR_RANGES}
-
-    for y, x in coords:
-        hsv_pixel = hsv_image[y, x]
-        for color_name, (lower_bound, upper_bound) in COLOR_RANGES.items():
-            if np.all(hsv_pixel >= lower_bound) and np.all(hsv_pixel <= upper_bound):
-                color_counts[color_name] += 1
-                break  # Stop checking other ranges once a match is found
-
-    dominant_color = max(color_counts, key=color_counts.get)
-
-    return dominant_color
+# # Function to get the primary color of the brick
+# def get_primary_color(frame, masked_frame, contour):
+#     mask = np.zeros(frame.shape, np.uint8)
+#     cv2.drawContours(mask, contour, -1, 255, -1)
+#     mean = cv2.mean(frame, mask=mask)
+#     print(mean)
+#     return "dominant_color"
 
 # Function to process frames and detect bricks
-def process_frame(frame, contour):
-    if not movement_in_progress and toggle_detect:
-        cv2.drawContours(frame, contour, -1, (0, 255, 0), 2, cv2.LINE_AA)
+def process_frame(frame):
+    # if not movement_in_progress and toggle_detect:
+    #     cv2.drawContours(frame, contour, -1, (0, 255, 0), 2, cv2.LINE_AA)
     return frame
 
 # Frame generation function that checks the API call interval
 def generate_frames():
     global response_received
-    last_api_call_time = time.time()  # Timestamp for the last API call
+    last_api_call_time = time.time()  # Timestamp for the last API call\
     camera = cv2.VideoCapture(CAMERA_SELECT)
-    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     camera.set(cv2.CAP_PROP_FPS, 24)
 
     while True:
@@ -171,9 +159,8 @@ def generate_frames():
             break
 
         current_time = time.time()
-
-        masked_frame = frame.copy()
-        masked_frame, main_color, contour = mask_out_background(crop_to_square(masked_frame))
+        masked_frame, color = mask_out_background(frame.copy())
+        # color = get_primary_color(frame, masked_frame, contour)
 
         # Check if API call can be made
         if not movement_in_progress and not task_in_progress:  # Ensure no task is running
@@ -182,17 +169,19 @@ def generate_frames():
                 last_api_call_time = current_time  # Update last API call time
                 #frame_copy = frame.copy()
                 #frame_copy = cv2.resize(frame_copy, (1280, 720), interpolation=cv2.INTER_AREA)
+                socketio.start_background_task(brick_type_detect, masked_frame, color)  # Call API in background
 
-                socketio.start_background_task(brick_type_detect, masked_frame, main_color)  # Call API in background
-
-        frame = process_frame(frame, contour)
+        # frame = process_frame(frame)
         ret, buffer = cv2.imencode('.jpg', masked_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        if not ret:
+            print("Error: Failed to encode frame.")
+            continue  # Skip to the next iteration if encoding fails
         masked_frame = buffer.tobytes()
         yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + masked_frame + b'\r\n')
 
 def mask_out_background(frame):
     hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
+    part_color = "N/A"
     # Define the range for white color in HSV
     lower_white = np.array([0, 0, 200], dtype=np.uint8)
     upper_white = np.array([180, 30, 255], dtype=np.uint8)
@@ -203,7 +192,7 @@ def mask_out_background(frame):
     contours, _ = cv2.findContours(object_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
         print("Error: No object detected.")
-        return frame 
+        return frame, part_color
     
     # Find the contour closest to the center
     height, width = frame.shape[:2]
@@ -212,16 +201,37 @@ def mask_out_background(frame):
     closest_contour = get_contour_closest_to_center(contours, image_center)
     if closest_contour is None:
         print("Error: No valid contour found.")
-        return frame
-    color = get_primary_color(frame, closest_contour)
-    cv2.drawContours(frame, closest_contour, -1, (0, 255, 0), 2, cv2.LINE_AA)
+        return frame, part_color
+    
+    # cv2.drawContours(frame, closest_contour, -1, (0, 255, 0), 2, cv2.LINE_AA)
 
     mask = np.zeros((height, width), dtype=np.uint8)
     cv2.drawContours(mask, [closest_contour], -1, 255, thickness=cv2.FILLED)
     masked_frame = cv2.bitwise_and(frame, frame, mask=mask)
 
+    approx_polygon = approximate_contour(closest_contour)
 
-    return masked_frame, color, closest_contour
+    color_mask = np.zeros((height, width), dtype=np.uint8)
+    cv2.fillPoly(color_mask, [approx_polygon], 255)
+    masked_pixels = masked_frame[color_mask > 0]
+    
+    if masked_pixels.size == 0:
+        print("Error: No valid pixels found inside the polygon.")
+        return frame, part_color
+
+    avg_color_bgr = np.mean(masked_pixels, axis=0).astype(int)
+    avg_color_hsv = cv2.cvtColor(np.uint8([[avg_color_bgr]]), cv2.COLOR_BGR2HSV)[0][0]
+    
+    for color_name, (lower_bound, upper_bound) in COLOR_RANGES.items():
+        if np.all(avg_color_hsv >= lower_bound) and np.all(avg_color_hsv <= upper_bound):
+            part_color = color_name
+    print(part_color)
+    return masked_frame, part_color
+
+def approximate_contour(contour, epsilon_factor=0.01):
+    epsilon = epsilon_factor * cv2.arcLength(contour, True)
+    approx_polygon = cv2.approxPolyDP(contour, epsilon, True)
+    return approx_polygon
 
 def get_contour_closest_to_center(contours, image_center):
     if not contours:
@@ -259,7 +269,14 @@ def crop_to_square(img):
 # Route for streaming video
 @app.route("/video")
 def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace;boundary=frame')
+    expires_time = datetime.utcnow() + timedelta(seconds=5)  # Cache for 5 seconds
+    response = Response(
+        generate_frames(),
+        mimetype='multipart/x-mixed-replace; boundary=frame'
+    )
+    response.headers['Cache-Control'] = 'public, max-age=5'  # Cache for 5 seconds
+    response.headers['Expires'] = expires_time.strftime('%a, %d %b %Y %H:%M:%S GMT')
+    return response
 
 # route for getting all entries in db
 @app.route('/api/get_pieces')
