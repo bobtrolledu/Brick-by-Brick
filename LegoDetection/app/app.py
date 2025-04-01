@@ -129,58 +129,40 @@ def brick_type_detect(image, color):
 
 
 # Function to get the primary color of the brick
-def get_primary_color(mask):
-    hsv_frame = cv2.cvtColor(mask, cv2.COLOR_BGR2HSV)
+def get_primary_color(image, contour):
+    mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
+    cv2.drawContours(mask, [contour], -1, 255, thickness=cv2.FILLED)
+    masked_image = cv2.bitwise_and(image, image, mask=mask)
 
-    # Get the coordinates of the non-zero pixels in the mask
-    y_coords, x_coords = np.where(mask == 255)
+    hsv_image = cv2.cvtColor(masked_image, cv2.COLOR_BGR2HSV)
 
-    # Extract the pixel values within the contour
-    pixels = hsv_frame[y_coords, x_coords]
+    coords = np.column_stack(np.where(mask > 0))
+    color_counts = {color_name: 0 for color_name in COLOR_RANGES}
 
-    if len(pixels) == 0:
-        print("Error: No pixels found inside the contour.")
-        return "Unknown"  # Return "Unknown" if no pixels are found
+    for y, x in coords:
+        hsv_pixel = hsv_image[y, x]
+        for color_name, (lower_bound, upper_bound) in COLOR_RANGES.items():
+            if np.all(hsv_pixel >= lower_bound) and np.all(hsv_pixel <= upper_bound):
+                color_counts[color_name] += 1
+                break  # Stop checking other ranges once a match is found
 
-    # Classify each pixel into a color category
-    color_counts = Counter()
-    for pixel in pixels:
-        color_name = classify_color(pixel, COLOR_RANGES)
-        if color_name:
-            color_counts[color_name] += 1
+    dominant_color = max(color_counts, key=color_counts.get)
 
-    # Find the most common color
-    if not color_counts:
-        return "Unknown"
-    most_common_color = color_counts.most_common(1)[0][0]
-
-    return most_common_color 
-
-def classify_color(pixel, color_ranges):
-    for color_name, (lower, upper) in color_ranges.items():
-        if np.all(lower <= pixel) and np.all(pixel <= upper):
-            return color_name
-    return None
+    return dominant_color
 
 # Function to process frames and detect bricks
-def process_frame(frame):
-    if not movement_in_progress and boundingbox and toggle_detect:
-        l, r, u, d = boundingbox['left'], boundingbox['right'], boundingbox['upper'], boundingbox['lower']
-        iw, ih = boundingbox['image_width'], boundingbox['image_height']
-        fh, fw, _ = frame.shape
-        top_left = (int(l/iw * fw), int(u/ih * fh))
-        bottom_right = (int(r/iw * fw), int(d/ih * fh))
-        cv2.rectangle(frame, top_left, bottom_right, (255, 0, 0), 2)
+def process_frame(frame, contour):
+    if not movement_in_progress and toggle_detect:
+        cv2.drawContours(frame, contour, -1, (0, 255, 0), 2, cv2.LINE_AA)
     return frame
 
-# Frame generation function that checks the API call interval
 # Frame generation function that checks the API call interval
 def generate_frames():
     global response_received
     last_api_call_time = time.time()  # Timestamp for the last API call
     camera = cv2.VideoCapture(CAMERA_SELECT)
-    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
     camera.set(cv2.CAP_PROP_FPS, 24)
 
     while True:
@@ -191,7 +173,7 @@ def generate_frames():
         current_time = time.time()
 
         masked_frame = frame.copy()
-        masked_frame, main_color = mask_out_background(masked_frame)
+        masked_frame, main_color, contour = mask_out_background(crop_to_square(masked_frame))
 
         # Check if API call can be made
         if not movement_in_progress and not task_in_progress:  # Ensure no task is running
@@ -203,7 +185,7 @@ def generate_frames():
 
                 socketio.start_background_task(brick_type_detect, masked_frame, main_color)  # Call API in background
 
-        frame = process_frame(frame)
+        frame = process_frame(frame, contour)
         ret, buffer = cv2.imencode('.jpg', masked_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
         masked_frame = buffer.tobytes()
         yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + masked_frame + b'\r\n')
@@ -231,15 +213,15 @@ def mask_out_background(frame):
     if closest_contour is None:
         print("Error: No valid contour found.")
         return frame
+    color = get_primary_color(frame, closest_contour)
     cv2.drawContours(frame, closest_contour, -1, (0, 255, 0), 2, cv2.LINE_AA)
 
     mask = np.zeros((height, width), dtype=np.uint8)
     cv2.drawContours(mask, [closest_contour], -1, 255, thickness=cv2.FILLED)
     masked_frame = cv2.bitwise_and(frame, frame, mask=mask)
 
-    color = get_primary_color(masked_frame)
 
-    return masked_frame, color
+    return masked_frame, color, closest_contour
 
 def get_contour_closest_to_center(contours, image_center):
     if not contours:
