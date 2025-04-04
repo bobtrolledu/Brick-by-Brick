@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>{% block title %} {% endblock %}</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+    <script>
+      var socket = io();
+
+      // Listen for updates from the backend
+      socket.on("update_info", function (data) {
+        document.getElementById("brick-id").innerText = data.id;
+        document.getElementById("brick-name").innerText = data.name;
+        document.getElementById("confidence").innerText = data.confidence;
+        document.getElementById("color").innerText = data.color;
+      });
+    </script>
+  </head>
+
+  <body>
+    <img src="{{ url_for('video_feed') }}" width="1280" height="720" />
+    <h2>Detected Brick Information</h2>
+    <div style="">
+      <p style="display: inline-block; margin:0px 5px;"><span>BrickID: </span><span id="brick-id">Waiting...</span></p>
+      <p style="display: inline-block; margin:0px 5px;"><span>Name: </span><span id="brick-name">Waiting...</span></p>
+      <p style="display: inline-block; margin:0px 5px;"><span>Confidence: </span><span id="confidence">0</span>%</p>
+      <p style="display: inline-block; margin:0px 5px;"><span>Color: </span><span id="color">N/A</span></p>
+    </div>
+    {% block content %} {% endblock %}
+  </body>
+</html>

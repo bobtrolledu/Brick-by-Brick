@@ -1,0 +1,67 @@
+@startuml SequenceUML
+
+!pragma teoz true
+
+actor user as user
+
+box "Raspberry Pi Service" #LightBlue
+    participant WebCamera as WebCamera
+        box "Sorting Service"
+        participant SortingManager as SortingManager
+        participant DetectionModel as DetectionModel
+        participant BrickognizeAPI as BrickognizeAPI
+        participant Hardware as Hardware
+        participant UIController as UIController
+        end box
+end box
+
+box "Web App Service" #LightGreen
+    participant AWS as AWS
+    participant Django as Django
+    participant React as React
+end box
+
+skinparam sequenceMessageAlign center
+autonumber
+
+user -> SortingManager: Start program
+
+group Sending Raw Image
+    SortingManager -> WebCamera: Request Image
+    activate SortingManager #FFBBBB
+    WebCamera --> SortingManager: Sending image data packet
+    deactivate SortingManager
+    SortingManager -> SortingManager: Process image for detection
+    SortingManager -> DetectionModel: Passing image data packet
+end
+
+SortingManager -> UIController: Updating progress bar
+
+group Processing Image
+    DetectionModel -> BrickognizeAPI: Create API Request
+    activate DetectionModel #FFBBBB
+    BrickognizeAPI --> DetectionModel: Fulfulling API Request
+    deactivate DetectionModel
+    DetectionModel -> AWS: API Request to update tables
+    DetectionModel -> SortingManager: Updates sorting bin information
+end
+
+group Sorting Piece
+    SortingManager -> Hardware: Sending coordinate data
+    activate SortingManager #FFBBBB
+    Hardware --> SortingManager: Sending completion message
+    deactivate SortingManager #FFBBBB
+    SortingManager -> UIController: Updating progress bar
+end 
+
+group Update WebApp
+    Django -> AWS: Query API Request
+    activate Django #FFBBBB
+    AWS --> Django: Fulfill API Request
+    deactivate Django #FFBBBB
+    React -> Django: Query API Request for image/video
+    activate React #FFBBBB
+    Django --> React: Fulfill API Request
+    deactivate React #FFBBBB
+end
+@enduml
