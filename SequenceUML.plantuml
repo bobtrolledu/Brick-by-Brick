@@ -4,64 +4,56 @@
 
 actor user as user
 
-box "Raspberry Pi Service" #LightBlue
+box "Laptop Service" #LightBlue
     participant WebCamera as WebCamera
         box "Sorting Service"
-        participant SortingManager as SortingManager
-        participant DetectionModel as DetectionModel
+        participant generate_frames as generate_frames
+        participant process_frame as process_frame
         participant BrickognizeAPI as BrickognizeAPI
-        participant Hardware as Hardware
-        participant UIController as UIController
+        box "Raspberry Pi Service" #LightSalmon
+            participant Hardware as Hardware 
+            end box
         end box
 end box
 
 box "Web App Service" #LightGreen
-    participant AWS as AWS
-    participant Django as Django
+    participant SQLite3 as SQLite3
+    participant Flask as Flask
     participant React as React
 end box
 
 skinparam sequenceMessageAlign center
 autonumber
 
-user -> SortingManager: Start program
+user -> generate_frames: Start program
 
-group Sending Raw Image
-    SortingManager -> WebCamera: Request Image
-    activate SortingManager #FFBBBB
-    WebCamera --> SortingManager: Sending image data packet
-    deactivate SortingManager
-    SortingManager -> SortingManager: Process image for detection
-    SortingManager -> DetectionModel: Passing image data packet
+group Sending Image From WebCamera
+    generate_frames -> WebCamera: Request Image
+    activate generate_frames #FFBBBB
+    WebCamera --> generate_frames: Sending image data packet
+    deactivate generate_frames 
+    generate_frames -> process_frame: Process image for detection
 end
 
-SortingManager -> UIController: Updating progress bar
-
 group Processing Image
-    DetectionModel -> BrickognizeAPI: Create API Request
-    activate DetectionModel #FFBBBB
-    BrickognizeAPI --> DetectionModel: Fulfulling API Request
-    deactivate DetectionModel
-    DetectionModel -> AWS: API Request to update tables
-    DetectionModel -> SortingManager: Updates sorting bin information
+    process_frame -> BrickognizeAPI: Passing image data packet
+    activate process_frame #FFBBBB
+    BrickognizeAPI --> process_frame: Passing predicted lego piece data
+    deactivate process_frame
+end
+
+group Update WebApp
+    process_frame -> Flask: Sending lego piece data to backend
+    Flask -> SQLite3: Update DB with new piece
+    Flask -> React: Update Frontend with new data
 end
 
 group Sorting Piece
-    SortingManager -> Hardware: Sending coordinate data
-    activate SortingManager #FFBBBB
-    Hardware --> SortingManager: Sending completion message
-    deactivate SortingManager #FFBBBB
-    SortingManager -> UIController: Updating progress bar
+    activate process_frame #FFBBBB
+    process_frame -> Hardware: Sending bin coordinates to sort lego piece
+    Hardware --> process_frame: Sending completed movement response
+    deactivate process_frame
+    process_frame -> generate_frames: Send response to get new image
 end 
 
-group Update WebApp
-    Django -> AWS: Query API Request
-    activate Django #FFBBBB
-    AWS --> Django: Fulfill API Request
-    deactivate Django #FFBBBB
-    React -> Django: Query API Request for image/video
-    activate React #FFBBBB
-    Django --> React: Fulfill API Request
-    deactivate React #FFBBBB
-end
 @enduml
