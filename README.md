@@ -1,6 +1,6 @@
 # CMPE246-Group11
 
-# 🧱 Demo Video
+# 🧱 Brick by Brick Demo Video
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/-2BJYd74knk/0.jpg)](https://www.youtube.com/watch?v=-2BJYd74knk)
 
@@ -32,7 +32,7 @@ We built **BRICK by BRICK** as a real-time embedded system using:
 - **Python** (for backend logic and GPIO control)  
 - **OpenCV** + Brickognize API (for object classification)  
 - **Raspberry Pi 4B** with camera module  
-- **Stepper motors** + A4988 drivers for precise gantry movement  
+- **Stepper motors** + TMC2209 drivers for precise gantry movement  
 - **Next.js + Vite** for optional frontend visual interface  
 - **Flask + Websockets** for communication between UI and backend  
 - **SolidWorks** for 3D modeling and gantry design  
@@ -89,9 +89,3 @@ We built **BRICK by BRICK** as a real-time embedded system using:
 | **Ye** | AI & Computer Vision, Backend Integration |
 | **Yehezkiel** | SolidWorks, Marketing, Demo Filming |
 | **Su** | Frontend Dev, Backend Assistant, UI Design |
-
----
-
-## 🎥 Demo
-
-> 📹 link here when finished:
