@@ -1,0 +1,380 @@
+|\  Merge: c65de7f 38e98f8
+| | Author: School <aho13@student.ubc.ca>
+| | Date:   9 days ago
+| |
+| |     On main: !!GitHub_Desktop<main>
+| |
+| * commit 38e98f8
+|/  Author: School <aho13@student.ubc.ca>
+|   Date:   9 days ago
+|
+|       index on main: c65de7f GLTF and STL
+|
+* commit c65de7f (HEAD -> main, origin/main, origin/HEAD)
+| Author: kiellg <kielgaol23@gmail.com>
+| Date:   9 days ago
+|
+|     GLTF and STL
+|
+* commit 2b7d2d6
+| Author: bobtrolledu <aho13@student.ubc.ca>
+| Date:   9 days ago
+|
+|     Revert "Merge branch 'main' of https://github.ubc.ca/CMPE-O-246-001-O2024W2/CMPE246-Group11"
+|
+|     This reverts commit 7558bd5f2886ccbb7bc26fc7245c779d84b44093, reversing
+|     changes made to dd9b88a03dec0df5b85ec4a441dc6d681876964e.
+|
+* commit 6dbb48f
+| Author: bobtrolledu <aho13@student.ubc.ca>
+| Date:   9 days ago
+|
+|     Revert "fine tuned color detect model"
+|
+|     This reverts commit 165f33c80a947c62223478f85d55900036c4c8f9.
+|
+| * commit 371bbdd (origin/freedom, freedom)
+|/  Author: Ye Aung <yethwayaung2023@gmail.com>
+|   Date:   9 days ago
+|
+|       freedom
+|
+* commit 10350a0
+| Author: bobtrolledu <aho13@student.ubc.ca>
+| Date:   9 days ago
+|
+|     Revert "Merge branch 'main' of https://github.ubc.ca/CMPE-O-246-001-O2024W2/CMPE246-Group11"
+|
+|     This reverts commit e9debcb2dc6eb6764f8355329da62519526d254f, reversing
+|     changes made to efe1716d8ae8722f358e32b99192807f366cc363.
+|
+* commit cb1a2b8
+| Author: bobtrolledu <aho13@student.ubc.ca>
+| Date:   9 days ago
+|
+|     Revert "Merge branch 'main' of https://github.ubc.ca/CMPE-O-246-001-O2024W2/CMPE246-Group11"
+|
+|     This reverts commit c3dd086056461dae660c8dbd0e6d10ead16fe356, reversing
+|     changes made to 165f33c80a947c62223478f85d55900036c4c8f9.
+|
+*   commit c3dd086 (origin/working-branch)
+|\  Merge: 165f33c 7558bd5
+| | Author: yta3216 <yta3216@gmail.com>
+| | Date:   9 days ago
+| |
+| |     Merge branch 'main' of https://github.ubc.ca/CMPE-O-246-001-O2024W2/CMPE246-Group11
+| |
+| *   commit 7558bd5
+| |\  Merge: dd9b88a e9debcb
+| | | Author: kiellg <kielgaol23@gmail.com>
+| | | Date:   9 days ago
+| | |
+| | |     Merge branch 'main' of https://github.ubc.ca/CMPE-O-246-001-O2024W2/CMPE246-Group11
+| | |
+| * | commit dd9b88a
+| | | Author: kiellg <kielgaol23@gmail.com>
+| | | Date:   9 days ago
+| | |
+| | |     Update README.md
+| | |
+| | |     title
+| | |
+* | | commit 165f33c
+| |/  Author: yta3216 <yta3216@gmail.com>
+|/|   Date:   9 days ago
+| |
+| |       fine tuned color detect model
+| |
+* | commit e9debcb (origin/working-part2)
+|\| Merge: efe1716 4d3987e
+| | Author: yta3216 <yta3216@gmail.com>
+| | Date:   9 days ago
+| |
+| |     Merge branch 'main' of https://github.ubc.ca/CMPE-O-246-001-O2024W2/CMPE246-Group11
+| |
+| * commit 4d3987e
+| | Author: kiellg <kielgaol23@gmail.com>
+| | Date:   9 days ago
+| |
+| |     Update README.md
+| |
+| |     self explanatory
+| |
+* | commit efe1716
+|/  Author: yta3216 <yta3216@gmail.com>
+|   Date:   9 days ago
+|
+|       refined color detection model, fixed some bugs
+|
+*   commit 5d13214
+|\  Merge: 4f9d4a2 97edbde
+| | Author: aho13 <aho13@student.ubc.ca>
+| | Date:   9 days ago
+| |
+| |     Merge branch 'main' of https://github.ubc.ca/CMPE-O-246-001-O2024W2/CMPE246-Group11
+| |
+| * commit 97edbde
+| | Author: bobtrolledu <aho13@student.ubc.ca>
+| | Date:   9 days ago
+| |
+| |     confindence fix
+| |
+* | commit 4f9d4a2
+|/  Author: aho13 <aho13@student.ubc.ca>
+|   Date:   9 days ago
+|
+|       pulse fix
+|
+* commit acbe1f0
+| Author: bobtrolledu <aho13@student.ubc.ca>
+| Date:   10 days ago
+|
+|     full fix backend
+|
+* commit d5ada0a
+| Author: aho13 <aho13@student.ubc.ca>
+| Date:   10 days ago
+|
+|     full fix
+|
+*   commit 698c31a
+|\  Merge: 472d352 55d371b
+| | Author: aho13 <aho13@student.ubc.ca>
+| | Date:   10 days ago
+| |
+| |     Merge branch 'main' of https://github.ubc.ca/CMPE-O-246-001-O2024W2/CMPE246-Group11
+| |
+| * commit 55d371b
+| | Author: yta3216 <yta3216@gmail.com>
+| | Date:   10 days ago
+| |
+| |     modified send_test.[y
+| |
+* | commit 472d352
+|/  Author: aho13 <aho13@student.ubc.ca>
+|   Date:   10 days ago
+|
+|       working
+|
+* commit 0531c07
+| Author: yta3216 <yta3216@gmail.com>
+| Date:   10 days ago
+|
+|     server to pi connection success
+|
+*   commit 193c065
+|\  Merge: 6dd80ac 3bb578e
+| | Author: bobtrolledu <aho13@student.ubc.ca>
+| | Date:   10 days ago
+| |
+| |     Merge branch 'main' of https://github.ubc.ca/CMPE-O-246-001-O2024W2/CMPE246-Group11
+| |
+| * commit 3bb578e
+| | Author: yta3216 <yta3216@gmail.com>
+| | Date:   10 days ago
+| |
+| |     added mqtt func to flask server
+| |
+* | commit 6dd80ac
+|/  Author: bobtrolledu <aho13@student.ubc.ca>
+|   Date:   10 days ago
+|
+|       working mqtt hotfix
+|
+* commit 498665f
+| Author: yta3216 <yta3216@gmail.com>
+| Date:   10 days ago
+|
+|     attempted to fix detection bugs; temporarily set camera resolution to 720p
+|
+*   commit b9d2838
+|\  Merge: 1f44181 8354b99
+| | Author: yta3216 <yta3216@gmail.com>
+| | Date:   10 days ago
+| |
+| |     Merge branch 'main' of https://github.ubc.ca/CMPE-O-246-001-O2024W2/CMPE246-Group11
+| |
+| * commit 8354b99
+| | Author: aho13 <aho13@student.ubc.ca>
+| | Date:   10 days ago
+| |
+| |     Refactored
+| |
+| * commit 7cc8d15
+| | Author: sthwe <sumyatthwe2023@gmail.com>
+| | Date:   11 days ago
+| |
+| |     completed website skeleton
+| |
+| *   commit adba5ee
+| |\  Merge: 261831d 65e299d
+| | | Author: aho13 <aho13@student.ubc.ca>
+| | | Date:   11 days ago
+| | |
+| | |     Merge branch 'main' of https://github.ubc.ca/CMPE-O-246-001-O2024W2/CMPE246-Group11
+| | |
+| | * commit 65e299d
+| | | Author: bobtrolledu <aho13@student.ubc.ca>
+| | | Date:   11 days ago
+| | |
+| | |     4k image and mqtt communication
+| | |
+| * | commit 261831d
+| |/  Author: aho13 <aho13@student.ubc.ca>
+| |   Date:   11 days ago
+| |
+| |       motor control and mqtt recieve
+| |
+* | commit 1f44181
+| | Author: yta3216 <yta3216@gmail.com>
+| | Date:   10 days ago
+| |
+| |     temp
+| |
+* | commit 435ee16
+|/  Author: yta3216 <yta3216@gmail.com>
+|   Date:   10 days ago
+|
+|       temp
+|
+*   commit 0635728
+|\  Merge: 2acc305 ea16d43
+| | Author: yta3216 <yta3216@gmail.com>
+| | Date:   12 days ago
+| |
+| |     reset pieces.db
+| |
+| * commit ea16d43
+| | Author: bobtrolledu <aho13@student.ubc.ca>
+| | Date:   13 days ago
+| |
+| |     new ramp
+| |
+| *   commit a3104b0
+| |\  Merge: c8f6419 a064c5d
+| | | Author: kiellg <kielgaol23@gmail.com>
+| | | Date:   2 weeks ago
+| | |
+| | |     Merge branch 'main' of https://github.ubc.ca/CMPE-O-246-001-O2024W2/CMPE246-Group11
+| | |
+| * | commit c8f6419
+| | | Author: kiellg <kielgaol23@gmail.com>
+| | | Date:   2 weeks ago
+| | |
+| | |     Feeder Assembly
+| | |
+| | |     Complete with the main assembly
+| | |
+* | | commit 2acc305
+| |/  Author: yta3216 <yta3216@gmail.com>
+|/|   Date:   12 days ago
+| |
+| |       added react frontend, converted flask backend to api
+| |
+* | commit a064c5d
+| | Author: yta3216 <yta3216@gmail.com>
+| | Date:   3 weeks ago
+| |
+| |     added requirements.txt
+| |
+* | commit d054d88
+| | Author: yta3216 <yta3216@gmail.com>
+| | Date:   3 weeks ago
+| |
+| |     completed MVP for project. fully functional sqlite database and flask app + basic detection algo.
+| |
+* | commit 0300924
+|/  Author: aho13 <aho13@student.ubc.ca>
+|   Date:   3 weeks ago
+|
+|       made test stepper driver program
+|
+* commit e3a9ab6
+| Author: School <aho13@student.ubc.ca>
+| Date:   3 weeks ago
+|
+|     updated mates
+|
+* commit e268560
+| Author: School <aho13@student.ubc.ca>
+| Date:   3 weeks ago
+|
+|     updated linear rail
+|
+* commit bd1f229
+| Author: bobtrolledu <aho13@student.ubc.ca>
+| Date:   3 weeks ago
+|
+|     new stls
+|
+* commit 2622d47
+| Author: School <aho13@student.ubc.ca>
+| Date:   3 weeks ago
+|
+|     new motor wheel setup
+|
+* commit 3a588df
+| Author: School <aho13@student.ubc.ca>
+| Date:   3 weeks ago
+|
+|     updated stls
+|
+* commit 9e82662
+| Author: bobtrolledu <aho13@student.ubc.ca>
+| Date:   3 weeks ago
+|
+|     new stls
+|
+* commit 2b3983f
+| Author: School <aho13@student.ubc.ca>
+| Date:   3 weeks ago
+|
+|     new linear bearing
+|
+* commit e63159a
+| Author: bobtrolledu <aho13@student.ubc.ca>
+| Date:   4 weeks ago
+|
+|     Full gantry
+|
+* commit 4eed4c5
+| Author: School <aho13@student.ubc.ca>
+| Date:   4 weeks ago
+|
+|     Y Axis Gantry
+|
+* commit 48ffbc2
+| Author: School <aho13@student.ubc.ca>
+| Date:   4 weeks ago
+|
+|     Belt system for one  axis
+|
+* commit 58fc3be
+| Author: School <aho13@student.ubc.ca>
+| Date:   4 weeks ago
+|
+|     Chamfer_Stl
+|
+* commit 5f2e6ef
+| Author: School <aho13@student.ubc.ca>
+| Date:   4 weeks ago
+|
+|     STL Files
+|
+* commit ef07529
+| Author: School <aho13@student.ubc.ca>
+| Date:   4 weeks ago
+|
+|     initial solidworks design
+|
+* commit c2d0936
+| Author: School <aho13@student.ubc.ca>
+| Date:   6 weeks ago
+|
+|     basic uml diagrams
+|
+* commit e466b6b
+  Author: Anson Ho <aho13@student.ubc.ca>
+  Date:   6 weeks ago
+
+      Initial commit
